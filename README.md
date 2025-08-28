@@ -30,8 +30,8 @@
 
 1.  **Клонируйте репозиторий:**
     ```bash
-    git clone <your-repo-url>
-    cd <project-folder-name>
+    git clone https://github.com/lupusest/test_task.git
+    cd test_task
     ```
 
 2.  **Настройте переменные окружения:**
