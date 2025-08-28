@@ -1,0 +1,50 @@
+services:
+  web:
+    build: .
+    entrypoint: /app/entrypoint.sh
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - "8000:80"  # Мы пробрасываем порт 8000 с нашей машины на порт 80 внутри контейнера Nginx
+    volumes:
+      - ./staticfiles:/app/staticfiles # Связываем папку со статикой
+      - ./media:/app/media # Папка для медиафайлов на будущее
+    depends_on:
+      - web
+
+  db:
+    image: mariadb:10.5
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+
+  redis:
+    image: redis:6.2-alpine
+
+  celery:
+    build: .
+    command: celery -A test_task worker -l info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  mariadb_data:

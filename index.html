@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления контентом</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #ecf0f1;
+            --surface-color: #ffffff;
+            --text-color: #34495e;
+            --border-color: #bdc3c7;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { width: 100%; max-width: 1200px; background: var(--surface-color); border-radius: var(--border-radius); box-shadow: var(--shadow); overflow: hidden; }
+        header { background-color: var(--primary-color); color: white; padding: 20px 30px; text-align: center; }
+        header h1 { font-weight: 500; }
+        main { display: flex; min-height: 60vh; }
+        #sidebar { width: 30%; border-right: 1px solid var(--border-color); padding: 20px; background-color: #f8f9fa; display: flex; flex-direction: column; }
+        #sidebar h2 { font-weight: 500; margin-bottom: 20px; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
+        #page-list { list-style-type: none; flex-grow: 1; overflow-y: auto; margin-bottom: 20px;}
+        .page-item { padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease-in-out; font-weight: 500; border: 1px solid transparent; }
+        .page-item:hover { background-color: #e9ecef; border-color: var(--primary-color); }
+        .page-item.active { background-color: var(--primary-color); color: white; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.4); }
+        #detail-view { width: 70%; padding: 30px; position: relative; }
+        #page-detail-placeholder { text-align: center; color: #95a5a6; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #page-detail-placeholder svg { width: 80px; height: 80px; margin-bottom: 20px; opacity: 0.5; }
+        #page-detail { display: none; }
+        #page-detail-title { font-size: 2em; font-weight: 600; color: var(--secondary-color); margin-bottom: 25px; }
+        #content-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .content-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; box-shadow: var(--shadow); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .content-card:hover { transform: translateY(-5px); box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1); }
+        .card-header { display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #ecf0f1; }
+        .card-header svg { width: 24px; height: 24px; margin-right: 12px; color: var(--primary-color); }
+        .card-header h3 { font-size: 1.1em; font-weight: 500; color: var(--secondary-color); }
+        .card-body p { margin-bottom: 8px; font-size: 0.9em; white-space: pre-wrap; word-break: break-word; }
+        .card-body strong { color: var(--secondary-color); margin-right: 5px; }
+        .card-body a { color: var(--primary-color); text-decoration: none; word-break: break-all; }
+        .card-body a:hover { text-decoration: underline; }
+        .card-footer { margin-top: 15px; padding-top: 10px; border-top: 1px solid #ecf0f1; font-size: 0.8em; color: #7f8c8d; display: flex; align-items: center; }
+        .card-footer svg { width: 16px; height: 16px; margin-right: 8px; }
+        #loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; display: none; }
+        #error-message { color: #e74c3c; text-align: center; margin-top: 20px; font-weight: 500; display: none; }
+        #pagination { margin-top: auto; display: flex; justify-content: center; align-items: center; gap: 5px; flex-wrap: wrap; padding-top: 15px; border-top: 1px solid var(--border-color);}
+        .pagination-btn { background-color: #dfe6e9; color: var(--secondary-color); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: all 0.2s; font-weight: 500;}
+        .pagination-btn:hover:not(:disabled) { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .pagination-btn:disabled { background-color: #bdc3c7; color: #7f8c8d; cursor: not-allowed; opacity: 0.6;}
+        .pagination-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; cursor: default; }
+        @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>Панель управления контентом</h1></header>
+        <main>
+            <aside id="sidebar">
+                <h2>Страницы</h2>
+                <ul id="page-list"></ul>
+                <div id="pagination">
+                    <!-- Кнопки пагинации будут сгенерированы здесь -->
+                </div>
+            </aside>
+            <section id="detail-view">
+                <div id="page-detail-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>
+                    <p>Выберите страницу слева, чтобы посмотреть её содержимое.</p>
+                </div>
+                <div id="page-detail"><h2 id="page-detail-title"></h2><div id="content-container"></div></div>
+                <div id="loader"></div><div id="error-message"></div>
+            </section>
+        </main>
+    </div>
+    <script>
+        const pageListEl = document.getElementById('page-list');
+        const pageDetailEl = document.getElementById('page-detail');
+        const pageDetailPlaceholderEl = document.getElementById('page-detail-placeholder');
+        const pageDetailTitleEl = document.getElementById('page-detail-title');
+        const contentContainerEl = document.getElementById('content-container');
+        const loaderEl = document.getElementById('loader');
+        const errorMessageEl = document.getElementById('error-message');
+        const paginationEl = document.getElementById('pagination');
+
+        const ICONS = {
+            video: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg>`,
+            audio: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V7.5A2.25 2.25 0 0013.5 5.25h-3A2.25 2.25 0 008.25 7.5v3.75m0 0v3.75a2.25 2.25 0 001.632 2.163l1.32.377a1.803 1.803 0 00.99-3.467l-2.31-.66a2.25 2.25 0 01-1.632-2.163z" /></svg>`,
+            eye: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`
+        };
+        
+        function showLoader() { loaderEl.style.display = 'block'; }
+        function hideLoader() { loaderEl.style.display = 'none'; }
+        function showError(message) {
+            errorMessageEl.textContent = `Ошибка: ${message}. Убедитесь, что бэкенд запущен.`;
+            errorMessageEl.style.display = 'block';
+        }
+        function hideError() { errorMessageEl.style.display = 'none'; }
+
+        async function fetchPages(url = '/api/v1/pages/') {
+            showLoader();
+            hideError();
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const data = await response.json();
+                
+                pageListEl.innerHTML = '';
+                data.results.forEach(page => {
+                    const li = document.createElement('li');
+                    li.className = 'page-item';
+                    li.textContent = page.title;
+                    li.dataset.pageUrl = page.url;
+                    pageListEl.appendChild(li);
+                });
+
+                renderPagination(data.count, data.previous, data.next, url);
+
+            } catch (error) {
+                console.error('Error fetching pages:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        function renderPagination(count, prevUrl, nextUrl, currentUrlStr) {
+            paginationEl.innerHTML = '';
+            const pageSize = 10;
+            const totalPages = Math.ceil(count / pageSize);
+            if (totalPages <= 1) return;
+            
+            const currentUrl = new URL(currentUrlStr, window.location.origin);
+            const currentPage = parseInt(currentUrl.searchParams.get('page') || '1');
+
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '«';
+            prevBtn.className = 'pagination-btn';
+            prevBtn.disabled = !prevUrl;
+            if (prevUrl) prevBtn.onclick = () => fetchPages(prevUrl);
+            paginationEl.appendChild(prevBtn);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.className = 'pagination-btn';
+                if (i === currentPage) {
+                    pageBtn.classList.add('active');
+                    pageBtn.disabled = true;
+                } else {
+                    const pageUrl = new URL(currentUrl.pathname, window.location.origin);
+                    pageUrl.searchParams.set('page', i);
+                    pageBtn.onclick = () => fetchPages(pageUrl.href);
+                }
+                paginationEl.appendChild(pageBtn);
+            }
+
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '»';
+            nextBtn.className = 'pagination-btn';
+            nextBtn.disabled = !nextUrl;
+            if (nextUrl) nextBtn.onclick = () => fetchPages(nextUrl);
+            paginationEl.appendChild(nextBtn);
+        }
+
+        async function fetchPageDetail(pageUrl) {
+            showLoader();
+            hideError();
+            pageDetailPlaceholderEl.style.display = 'none';
+            pageDetailEl.style.display = 'none';
+            try {
+                const response = await fetch(pageUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const page = await response.json();
+                renderPageDetail(page);
+            } catch (error) {
+                console.error(`Error fetching page detail:`, error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        function renderPageDetail(page) {
+            pageDetailTitleEl.textContent = page.title;
+            contentContainerEl.innerHTML = '';
+            page.content_list.forEach(content => {
+                let cardBodyHtml = '';
+                let icon = '';
+                if (content.content_type === 'video') {
+                    icon = ICONS.video;
+                    cardBodyHtml = `<p><strong>Ссылка на видео:</strong> <a href="${content.video_file_url}" target="_blank" rel="noopener noreferrer">Открыть</a></p><p><strong>Субтитры:</strong> <a href="${content.subtitles_file_url}" target="_blank" rel="noopener noreferrer">Скачать</a></p>`;
+                } else if (content.content_type === 'audio') {
+                    icon = ICONS.audio;
+                    cardBodyHtml = `<p><strong>Текст:</strong></p><p>${content.text_content || '<em>Текст отсутствует</em>'}</p>`;
+                }
+                const cardHtml = `<div class="content-card"><div class="card-header">${icon}<h3>${content.title}</h3></div><div class="card-body">${cardBodyHtml}</div><div class="card-footer">${ICONS.eye}<span>Просмотров: ${content.counter}</span></div></div>`;
+                contentContainerEl.innerHTML += cardHtml;
+            });
+            pageDetailEl.style.display = 'block';
+        }
+
+        pageListEl.addEventListener('click', (e) => {
+            if (e.target && e.target.classList.contains('page-item')) {
+                document.querySelectorAll('.page-item').forEach(item => item.classList.remove('active'));
+                e.target.classList.add('active');
+                fetchPageDetail(e.target.dataset.pageUrl);
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => fetchPages());
+    </script>
+</body>
+</html>

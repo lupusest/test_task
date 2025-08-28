@@ -1,0 +1,11 @@
+# Используем официальный образ Nginx
+FROM nginx:1.25-alpine
+
+# Удаляем стандартную конфигурацию Nginx
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Копируем нашу собственную конфигурацию
+COPY nginx.conf /etc/nginx/conf.d/
+
+# Копируем наш фронтенд-файл
+COPY index.html /usr/share/nginx/html/
